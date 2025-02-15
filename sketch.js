@@ -3,7 +3,7 @@ let topAngle = 0, midAngle = 0, bassAngle = 0;
 let knobDragging = null;
 
 function setup() {
-    createCanvas(windowWidth, windowHeight, WEBGL); // 使用 WEBGL 优化渲染
+    createCanvas(windowWidth, windowHeight);
     
     // Load videos
     topVideo = createVideo('video/TOP.mov');
@@ -32,37 +32,30 @@ function draw() {
     let videoWidth = windowWidth;
     
     // 渲染视频
-    requestAnimationFrame(() => {
-        drawVideoWithOverlay(topVideo, 0, -videoHeight, videoWidth, videoHeight, topAngle);
-        drawVideoWithOverlay(midVideo, 0, 0, videoWidth, videoHeight, midAngle);
-        drawVideoWithOverlay(bassVideo, 0, videoHeight, videoWidth, videoHeight, bassAngle);
-    });
-
+    drawVideoWithOverlay(topVideo, windowWidth / 2, videoHeight / 2, videoWidth, videoHeight, topAngle);
+    drawVideoWithOverlay(midVideo, windowWidth / 2, videoHeight + videoHeight / 2, videoWidth, videoHeight, midAngle);
+    drawVideoWithOverlay(bassVideo, windowWidth / 2, (videoHeight * 2) + videoHeight / 2, videoWidth, videoHeight, bassAngle);
+    
     // 旋钮
-    drawKnob(0, -videoHeight, topAngle, 'TOP');
-    drawKnob(0, 0, midAngle, 'MID');
-    drawKnob(0, videoHeight, bassAngle, 'BASS');
+    drawKnob(windowWidth / 2, videoHeight / 2, topAngle, 'TOP');
+    drawKnob(windowWidth / 2, videoHeight + videoHeight / 2, midAngle, 'MID');
+    drawKnob(windowWidth / 2, (videoHeight * 2) + videoHeight / 2, bassAngle, 'BASS');
 }
 
 function drawVideoWithOverlay(video, x, y, w, h, angle) {
-    push();
-    translate(x, y);
     imageMode(CENTER);
-    image(video, 0, 0, w, h);
-    pop();
+    image(video, x, y, w, h);
     
     let volume = map(angle, 0, TWO_PI, 0, 1);
     video.volume(volume);
     
     if (volume === 0) {
         video.pause();
-        video.time(video.time()); // 停留在当前帧
-        push();
-        fill(0, 0, 0, 150);
+        setTimeout(() => video.time(video.time()), 50); // 确保停留在当前帧
+        fill(0, 0, 0, 127);
         rectMode(CENTER);
         rect(x, y, w, h);
-        pop();
-    } else {
+    } else if (!video.elt.paused) {
         video.play();
     }
 }
@@ -97,12 +90,12 @@ function drawKnob(x, y, angle, label) {
     pop();
 }
 
-function touchStarted() {
-    detectKnobTouch(touches[0].x, touches[0].y);
-}
-
+// **支持鼠标 & 触摸**
 function mousePressed() {
     detectKnobTouch(mouseX, mouseY);
+}
+function touchStarted() {
+    detectKnobTouch(touches[0].x, touches[0].y);
 }
 
 function detectKnobTouch(x, y) {
@@ -117,12 +110,12 @@ function detectKnobTouch(x, y) {
     }
 }
 
-function touchMoved() {
-    handleKnobDrag(touches[0].x, touches[0].y);
-}
-
+// **支持鼠标 & 触摸拖动**
 function mouseDragged() {
     handleKnobDrag(mouseX, mouseY);
+}
+function touchMoved() {
+    handleKnobDrag(touches[0].x, touches[0].y);
 }
 
 function handleKnobDrag(x, y) {
@@ -150,7 +143,6 @@ function handleKnobDrag(x, y) {
 function mouseReleased() {
     knobDragging = null;
 }
-
 function touchEnded() {
     knobDragging = null;
 }
