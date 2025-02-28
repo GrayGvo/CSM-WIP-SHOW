@@ -3,25 +3,437 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>River Lea Video Player</title>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/1.4.0/p5.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/1.4.0/addons/p5.sound.min.js"></script>
+    <title>The Lea Wellhead Boomer Demo</title>
+
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Jacquard+12&family=Jacquarda+Bastarda+9&family=Press+Start+2P&display=swap" rel="stylesheet">
+    
+
     <style>
+        /* 顶部标题 */
+header {
+    width: 100%;
+    text-align: center;
+    background-color: rgb(66, 144, 222); /* 设置背景颜色 */
+    margin: 0;
+}
+
+header h1 {
+    font-family: "Press Start 2P", sans-serif;
+    font-size: 10px;
+    line-height: 10px; /* 让文字居中 */
+    color: #000; /* 字体改为黑色 */
+    margin: 0;
+    padding: 8px 0;
+    margin: 0;
+}
+
+/* 底部版权信息 */
+footer {
+    width: 100%;
+    text-align: center;
+    background-color: rgb(66, 144, 222); /* 设置背景颜色 */
+    font-size: 10px;
+    font-family: "Press Start 2P", sans-serif;
+    color: #000; /* 字体改为黑色 */
+    margin: 0;
+}
+
         body {
+            background-color: black;
             margin: 0;
-            padding: 0;
             display: flex;
-            justify-content: center;
+            flex-direction: column;
             align-items: center;
-            min-height: 100vh;
-            background-color: #000;
+            height: 100vh;
+
         }
-        canvas {
-            display: block;
+        
+        .video-container {
+            position: relative;
+            width: 100vw;
+            height: 33.33vh;
+            overflow: hidden;
+            display: flex;
+            align-items: center;
+            justify-content: center;
         }
+
+        video {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+
+        /* 让旋钮及标题居中 */
+        .knob-container {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 100px;
+            height: auto;
+            text-align: center;
+            color: rgba(0, 0, 0);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            pointer-events: none; /* 让点击事件穿透到视频 */
+        }
+
+        /* 旋钮标题 */
+        .knob-container h2 {
+    font-family: "Press Start 2P", sans-serif;
+    font-size: 20px;
+    color: rgba(40, 55, 155);
+    text-align: center;
+    margin-bottom: 5px;
+}
+
+        /* 旋钮样式 */
+        .knob {
+            width: 100px;
+            height: 100px;
+            border-radius: 50%;
+            background-color: rgba(0, 0, 0, 0.7);
+            border: 2px solid rgba(225, 170, 85);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            position: relative;
+            cursor: grab;
+            pointer-events: auto; /* 让旋钮仍然可拖动 */
+        }
+
+        /* 旋钮上的指示线 */
+        .knob-line {
+            position: absolute;
+            width: 4px;
+            height: 10px;
+            background-color: rgba(212, 220, 122);
+            top: 4px;
+            left: 50%;
+            transform: translateX(-50%);
+        }
+        .knob-center {
+    width: 70px;  /* 小黑圆的大小 */
+    height: 70px;
+    border-radius: 50%;
+    background-color:  rgba(0, 0, 0, 0.8); /* 颜色设为黑色 */
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%); /* 让小圆居中 */
+}
+        /* 音量显示 */
+        .volume-text {
+            font-family: 'Jacquarda Bastarda 9', serif;
+            font-size: 25px;
+            font-weight: 400;
+            font-style: normal;
+            text-align: center;
+            color:rgb(60, 80, 140);
+        }
+
+        /* 默认无高光 */
+.knob-container,
+.knob,
+.volume-text {
+    transition: box-shadow 0.2s ease-in-out;
+}
+
+/* 鼠标按下时的高光效果 */
+.knob-container.active,
+.knob.active,
+.volume-text.active {
+    box-shadow: 0 0 10px 4px rgba(255, 255, 255, 0.9); /* 添加白色高光 */
+    border-radius: 10px;
+}
+
+/* 提示样式 */
+.start-prompt {
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    background-color: rgba(0, 0, 0, 0.8);
+    color: white;
+    padding: 20px;
+    border-radius: 10px;
+    text-align: center;
+    z-index: 1000;
+    cursor: pointer;
+    font-family: "Press Start 2P", sans-serif;
+    font-size: 14px;
+    border: 2px solid rgb(66, 144, 222);
+}
+
     </style>
 </head>
 <body>
-    <script src="sketch.js"></script>
+    <header>
+        <h1>Wear the Waterproof Headphone & Play with the Dials (MIND THE VOLUME)</h1>
+    </header>
+    
+    <!-- 初始点击提示 -->
+    <div class="start-prompt" id="startPrompt">
+        点击任意位置开始体验
+    </div>
+    
+    <!-- 视频 1 -->
+    <div class="video-container">
+        <video id="topVideo" src="video/TOP.mov" loop></video>
+        <div class="knob-container">
+            <h2>TOP</h2> <!-- 直接修改 h2 让其使用 Press Start 2P -->
+            <div class="knob" id="topKnob">
+                <div class="knob-line"></div>
+                <div class="knob-center"></div>
+            </div>
+            <div class="volume-text" id="topVolume">0%</div>
+        </div>
+    </div>
+
+    <!-- 视频 2 -->
+    <div class="video-container">
+        <video id="midVideo" src="video/MID.mov" loop></video>
+        <div class="knob-container">
+            <h2>MID</h2>
+            <div class="knob" id="midKnob">
+                <div class="knob-line"></div>
+                <div class="knob-center"></div>
+            </div>
+            <div class="volume-text" id="midVolume">0%</div>
+        </div>
+    </div>
+
+    <!-- 视频 3 -->
+    <div class="video-container">
+        <video id="bassVideo" src="video/BASS.mov" loop></video>
+        <div class="knob-container">
+            <h2>BASS</h2>
+            <div class="knob" id="bassKnob">
+                <div class="knob-line"></div>
+                <div class="knob-center"></div>
+            </div>
+            <div class="volume-text" id="bassVolume">0%</div>
+        </div>
+    </div>
+
+    <script>
+        // 获取所有元素
+        const topVideo = document.getElementById('topVideo');
+        const midVideo = document.getElementById('midVideo');
+        const bassVideo = document.getElementById('bassVideo');
+        
+        const topKnob = document.getElementById('topKnob');
+        const midKnob = document.getElementById('midKnob');
+        const bassKnob = document.getElementById('bassKnob');
+        
+        const topVolume = document.getElementById('topVolume');
+        const midVolume = document.getElementById('midVolume');
+        const bassVolume = document.getElementById('bassVolume');
+        
+        const startPrompt = document.getElementById('startPrompt');
+        
+        // 准备所有视频，初始暂停
+        [topVideo, midVideo, bassVideo].forEach(video => {
+            video.pause();
+            video.volume = 0;
+            video.preload = "auto";
+        });
+        
+        // 开始用户交互
+        let userInteracted = false;
+        
+        startPrompt.addEventListener('click', function() {
+            userInteracted = true;
+            startPrompt.style.display = 'none';
+            
+            // 确保所有视频已加载但保持暂停
+            [topVideo, midVideo, bassVideo].forEach(video => {
+                try {
+                    // 只加载，不播放
+                    video.load();
+                } catch(e) {
+                    console.error("无法加载视频:", e);
+                }
+            });
+            
+            // 启动自动序列
+            console.log("等待10秒后开始自动序列...");
+            setTimeout(startSequence, 10000);
+        });
+        
+        // 旋转旋钮并设置音量的函数
+        function rotateKnobAndSetVolume(knob, video, volumeText, targetPercentage, duration = 2000) {
+            return new Promise(resolve => {
+                const targetAngle = (targetPercentage / 100) * 350;
+                const targetVolume = targetPercentage / 100;
+                
+                const startAngle = parseFloat(knob.style.transform?.replace('rotate(', '').replace('deg)', '') || 0);
+                const startVolume = video.volume;
+                const startTime = performance.now();
+                
+                function animate(currentTime) {
+                    const elapsed = currentTime - startTime;
+                    const progress = Math.min(elapsed / duration, 1);
+                    
+                    // 缓动效果
+                    const easeProgress = 1 - Math.pow(1 - progress, 3);
+                    
+                    const currentAngle = startAngle + (targetAngle - startAngle) * easeProgress;
+                    const currentVolume = startVolume + (targetVolume - startVolume) * easeProgress;
+                    
+                    // 应用旋转和音量
+                    knob.style.transform = `rotate(${currentAngle}deg)`;
+                    video.volume = currentVolume;
+                    volumeText.textContent = Math.round(currentVolume * 100) + '%';
+                    
+                    if (progress < 1) {
+                        requestAnimationFrame(animate);
+                    } else {
+                        // 确保最终状态正确
+                        knob.style.transform = `rotate(${targetAngle}deg)`;
+                        video.volume = targetVolume;
+                        volumeText.textContent = Math.round(targetVolume * 100) + '%';
+                        console.log(`旋钮旋转完成，音量设置为 ${targetVolume}`);
+                        resolve();
+                    }
+                }
+                
+                requestAnimationFrame(animate);
+            });
+        }
+        
+        // 播放视频的函数
+        function playVideo(video) {
+            console.log("开始播放视频...");
+            
+            // 确保视频没有静音
+            video.muted = false;
+            
+            // 尝试播放视频
+            video.play().then(() => {
+                console.log("视频播放成功");
+            }).catch(e => {
+                console.error("视频播放失败:", e);
+                // 如果播放失败，尝试先静音播放，再取消静音
+                video.muted = true;
+                video.play().then(() => {
+                    console.log("静音播放成功，现在尝试取消静音");
+                    setTimeout(() => {
+                        video.muted = false;
+                        console.log("已取消静音");
+                    }, 500);
+                }).catch(e => {
+                    console.error("静音播放也失败:", e);
+                });
+            });
+        }
+        
+        // 开始自动序列
+        async function startSequence() {
+            console.log("开始自动序列");
+            
+            try {
+                // 旋转TOP旋钮到80%并设置音量
+                await rotateKnobAndSetVolume(topKnob, topVideo, topVolume, 80);
+                
+                // TOP旋钮旋转完成后，播放TOP视频
+                playVideo(topVideo);
+                
+                // 等待2秒让视频有时间开始播放
+                await new Promise(resolve => setTimeout(resolve, 2000));
+                
+                // 旋转MID旋钮到90%并设置音量
+                await rotateKnobAndSetVolume(midKnob, midVideo, midVolume, 90);
+                
+                // MID旋钮旋转完成后，播放MID视频
+                playVideo(midVideo);
+                
+                // 等待2秒
+                await new Promise(resolve => setTimeout(resolve, 2000));
+                
+                // 旋转BASS旋钮到100%并设置音量
+                await rotateKnobAndSetVolume(bassKnob, bassVideo, bassVolume, 100);
+                
+                // BASS旋钮旋转完成后，播放BASS视频
+                playVideo(bassVideo);
+                
+                console.log("自动序列完成");
+                
+            } catch (error) {
+                console.error("执行序列时出错:", error);
+            }
+        }
+        
+        // 手动旋钮控制
+        document.querySelectorAll('.knob').forEach(knob => {
+            let isDragging = false;
+            let angle = 0;
+            let video = knob.closest('.video-container').querySelector('video');
+            let volumeText = knob.closest('.knob-container').querySelector('.volume-text');
+
+            knob.addEventListener('mousedown', startDrag);
+            knob.addEventListener('touchstart', startDrag, { passive: false });
+
+            function startDrag(e) {
+                e.preventDefault();
+                
+                // 标记用户已交互
+                userInteracted = true;
+                startPrompt.style.display = 'none';
+                
+                isDragging = true;
+                document.addEventListener('mousemove', rotateKnobManually, { passive: false });
+                document.addEventListener('mouseup', stopDrag);
+                document.addEventListener('touchmove', rotateKnobManually, { passive: false });
+                document.addEventListener('touchend', stopDrag, { passive: false });
+            }
+
+            function stopDrag() {
+                isDragging = false;
+                document.removeEventListener('mousemove', rotateKnobManually);
+                document.removeEventListener('mouseup', stopDrag);
+                document.removeEventListener('touchmove', rotateKnobManually);
+                document.removeEventListener('touchend', stopDrag);
+            }
+
+            function rotateKnobManually(e) {
+                if (!isDragging) return;
+                const rect = knob.getBoundingClientRect();
+                const centerX = rect.left + rect.width / 2;
+                const centerY = rect.top + rect.height / 2;
+                const x = e.touches ? e.touches[0].clientX : e.clientX;
+                const y = e.touches ? e.touches[0].clientY : e.clientY;
+                const deltaX = x - centerX;
+                const deltaY = y - centerY;
+                let rawAngle = Math.atan2(deltaY, deltaX) * (180 / Math.PI);
+                angle = ((rawAngle + 450) % 360);
+                angle = Math.max(0, Math.min(angle, 350));
+                knob.style.transform = `rotate(${angle}deg)`;
+
+                // 计算音量并更新视频
+                const volume = angle / 350;
+                video.volume = volume;
+                volumeText.textContent = Math.round(volume * 100) + '%';
+
+                // 如果音量大于0，播放视频并确保不静音
+                if (volume > 0) {
+                    video.muted = false;
+                    if (video.paused) {
+                        video.play().catch(e => console.error("手动旋转播放失败:", e));
+                    }
+                } else {
+                    video.pause();
+                }
+            }
+        });
+    </script>
+    <footer>
+        <p>Lea Wellhead's Soundscape Boomer © 2025 The Lea Wellhead Records. All Rights Reserved.</p>
+    </footer>
 </body>
 </html>
